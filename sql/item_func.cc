@@ -131,6 +131,8 @@
 #include "sql/sql_audit.h"        // audit_global_variable
 #include "sql/sql_base.h"         // Internal_error_handler_holder
 #include "sql/sql_bitmap.h"
+#include "sql/handler.h"
+#include "sql/transaction_info.h"
 #include "sql/sql_class.h"  // THD
 #include "sql/sql_cmd.h"
 #include "sql/sql_derived.h"  // Condition_pushdown
@@ -1540,6 +1542,23 @@ longlong Item_func_connection_id::val_int() {
   Check arguments to determine the data type for a numeric
   function of two arguments.
 */
+
+
+longlong Item_func_xmin::val_int() {
+  THD *thd = current_thd;
+  // Если потока нет или данных еще нет, возвращаем 0
+  if (thd == nullptr) return 0;
+  
+  return (longlong) thd->last_row_trx_id;
+}
+
+void Item_func_xmin::print(const THD *thd, String *str,
+                           enum_query_type query_type) const {
+  (void)thd;        // Убираем ворнинг
+  (void)query_type;  // Убираем ворнинг
+  str->append(func_name());
+  str->append("()");
+}
 
 void Item_num_op::set_numeric_type(void) {
   DBUG_TRACE;

@@ -2558,6 +2558,8 @@ class THD : public MDL_context_owner,
   */
   query_id_t query_id;
 
+  ulonglong last_row_trx_id{0}; 
+
   /* Statement id is thread-wide. This counter is used to generate ids */
   ulong statement_id_counter;
   ulong rand_saved_seed1, rand_saved_seed2;

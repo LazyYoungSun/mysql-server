@@ -1130,6 +1130,21 @@ class Item_func_connection_id final : public Item_int_func {
   }
 };
 
+class Item_func_xmin final : public Item_int_func {
+ private:
+  longlong cached_xmin = 0;     // Сюда сохраним ID
+  longlong last_query_id = 0;   // Чтобы понять, что запрос сменился
+  
+ public:
+  Item_func_xmin(const POS &pos) : Item_int_func(pos) {}
+  longlong val_int() override;
+  const char *func_name() const override { return "xmin"; }
+  
+  // Добавим для отладки
+  void print(const THD *thd, String *str,
+             enum_query_type query_type) const override;
+};
+
 class Item_typecast_signed final : public Item_int_func {
  public:
   Item_typecast_signed(const POS &pos, Item *a) : Item_int_func(pos, a) {

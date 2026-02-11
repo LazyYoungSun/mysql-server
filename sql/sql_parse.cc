@@ -1751,6 +1751,7 @@ static void copy_bind_parameter_values(THD *thd, PS_PARAM *parameters,
 */
 bool dispatch_command(THD *thd, const COM_DATA *com_data,
                       enum enum_server_command command) {
+
   assert(thd->lex->m_IS_table_stats.is_valid() == false);
   assert(thd->lex->m_IS_tablespace_stats.is_valid() == false);
 #ifndef NDEBUG
