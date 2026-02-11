@@ -8717,7 +8717,7 @@ void ha_innobase::build_template(bool whole_row) {
 
   if (!m_prebuilt->mysql_template) {
     m_prebuilt->mysql_template = (mysql_row_templ_t *)ut::malloc_withkey(
-        UT_NEW_THIS_FILE_PSI_KEY, n_fields * sizeof(mysql_row_templ_t));
+        UT_NEW_THIS_FILE_PSI_KEY, (n_fields + 5) * sizeof(mysql_row_templ_t));
   }
 
 #if defined(UNIV_DEBUG) && !defined(UNIV_DEBUG_VALGRIND)
@@ -8956,22 +8956,37 @@ void ha_innobase::build_template(bool whole_row) {
   }
 
   if (m_prebuilt->n_template > 0 && index->is_clustered() && 
-      !m_prebuilt->table->is_system_table && 
-      m_prebuilt->select_lock_type == LOCK_NONE) { // LOCK_NONE значит обычный SELECT
-      
-      mysql_row_templ_t* x_templ = m_prebuilt->mysql_template + m_prebuilt->n_template++;
-      
-      x_templ->col_no = ULINT_UNDEFINED;
-      x_templ->is_virtual = false;
-      x_templ->clust_rec_field_no = index->n_uniq; 
-      x_templ->rec_field_no = x_templ->clust_rec_field_no;
-      
-      x_templ->mysql_col_offset = m_prebuilt->mysql_prefix_len;
-      x_templ->mysql_col_len = 6;
-      x_templ->type = DATA_SYS; 
-      x_templ->mysql_type = DATA_FIXBINARY;
-      
-      m_prebuilt->mysql_prefix_len += 6;
+    !m_prebuilt->table->is_system_table && 
+    m_prebuilt->select_lock_type == LOCK_NONE) {
+    
+    // ha_innodb.cc
+    // --- ПОДГОТОВКА XMIN ---
+    mysql_row_templ_t* x_templ = m_prebuilt->mysql_template + m_prebuilt->n_template++;
+    memset(x_templ, 0, sizeof(mysql_row_templ_t)); // КРИТИЧНО: обнуляем флаги (is_multi_val и т.д.)
+    
+    x_templ->col_no = ULINT_UNDEFINED;
+    x_templ->clust_rec_field_no = index->n_uniq; 
+    x_templ->rec_field_no = x_templ->clust_rec_field_no;
+    x_templ->mysql_col_offset = m_prebuilt->mysql_prefix_len;
+    x_templ->mysql_col_len = 6;
+    x_templ->type = DATA_SYS; 
+    x_templ->mysql_type = DATA_FIXBINARY;
+    
+    m_prebuilt->mysql_prefix_len += 6;
+
+    // --- ПОДГОТОВКА XMAX (ROLL_PTR) ---
+    mysql_row_templ_t* xmax_templ = m_prebuilt->mysql_template + m_prebuilt->n_template++;
+    memset(xmax_templ, 0, sizeof(mysql_row_templ_t)); // КРИТИЧНО: обнуляем флаги
+    
+    xmax_templ->col_no = ULINT_UNDEFINED;
+    xmax_templ->clust_rec_field_no = index->n_uniq + 1; 
+    xmax_templ->rec_field_no = xmax_templ->clust_rec_field_no;
+    xmax_templ->mysql_col_offset = m_prebuilt->mysql_prefix_len;
+    xmax_templ->mysql_col_len = 7; 
+    xmax_templ->type = DATA_SYS; 
+    xmax_templ->mysql_type = DATA_FIXBINARY;
+    
+    m_prebuilt->mysql_prefix_len += 7;
   }
 
 }

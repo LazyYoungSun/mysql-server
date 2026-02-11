@@ -1557,6 +1557,7 @@ longlong Item_func_xmin::val_int() {
   // В 9.6.0 record[0] - это текущий буфер. Проверяем и таблицу.
   if (!table || !table->record[0]) return 0;
 
+  //item_func.cc
   // Если это не InnoDB, мы просто не найдем там данных.
   // reclength - это размер всех полей. Наш TRX_ID идет сразу ЗА ними.
   size_t offset = table->s->reclength;
@@ -1577,6 +1578,40 @@ void Item_func_xmin::print(const THD *thd, String *str,
                            enum_query_type query_type) const {
   (void)thd;        // Убираем ворнинг
   (void)query_type;  // Убираем ворнинг
+  str->append(func_name());
+  str->append("()");
+}
+
+longlong Item_func_xmax::val_int() {
+  THD *thd = current_thd;
+  if (!thd || !thd->lex) return 0;
+
+  Query_block *query_block = thd->lex->current_query_block();
+  if (!query_block || query_block->leaf_tables == nullptr) return 0;
+
+  TABLE *table = query_block->leaf_tables->table;
+  if (!table || !table->record[0]) return 0;
+
+  // XMIN лежит на offset = table->s->reclength
+  // XMAX (ROLL_PTR) лежит сразу за ним (+ 6 байт)
+  size_t offset = table->s->reclength + 6;
+  uchar *ptr = table->record[0] + offset;
+
+  // Собираем 7 байт (Big Endian)
+  longlong res = ((longlong)ptr[0] << 48) |
+                 ((longlong)ptr[1] << 40) |
+                 ((longlong)ptr[2] << 32) |
+                 ((longlong)ptr[3] << 24) |
+                 ((longlong)ptr[4] << 16) |
+                 ((longlong)ptr[5] << 8)  |
+                 ((longlong)ptr[6]);
+  return res;
+}
+
+void Item_func_xmax::print(const THD *thd, String *str,
+                           enum_query_type query_type) const {
+  (void)thd;
+  (void)query_type;
   str->append(func_name());
   str->append("()");
 }

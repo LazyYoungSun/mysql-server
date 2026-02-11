@@ -1386,6 +1386,7 @@ static const std::pair<const char *, Create_func *> func_array[] = {
     {"CONCAT_WS", SQL_FN_V(Item_func_concat_ws, 2, MAX_ARGLIST_SIZE)},
     {"CONNECTION_ID", SQL_FN(Item_func_connection_id, 0)},
     {"XMIN", SQL_FN(Item_func_xmin, 0)},
+    {"XMAX", SQL_FN(Item_func_xmax, 0)},
     {"CONV", SQL_FN(Item_func_conv, 3)},
     {"CONVERT_TZ", SQL_FN(Item_func_convert_tz, 3)},
     {"COS", SQL_FN(Item_func_cos, 1)},

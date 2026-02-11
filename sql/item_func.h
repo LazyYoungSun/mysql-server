@@ -1137,7 +1137,16 @@ class Item_func_xmin final : public Item_int_func {
   longlong val_int() override;
   const char *func_name() const override { return "xmin"; }
   
-  // Добавим для отладки
+  void print(const THD *thd, String *str,
+             enum_query_type query_type) const override;
+};
+
+class Item_func_xmax final : public Item_int_func {
+ public:
+  Item_func_xmax(const POS &pos) : Item_int_func(pos) {}
+  longlong val_int() override;
+  const char *func_name() const override { return "xmax"; }
+  
   void print(const THD *thd, String *str,
              enum_query_type query_type) const override;
 };
