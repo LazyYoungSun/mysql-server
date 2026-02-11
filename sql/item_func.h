@@ -1131,9 +1131,6 @@ class Item_func_connection_id final : public Item_int_func {
 };
 
 class Item_func_xmin final : public Item_int_func {
- private:
-  longlong cached_xmin = 0;     // Сюда сохраним ID
-  longlong last_query_id = 0;   // Чтобы понять, что запрос сменился
   
  public:
   Item_func_xmin(const POS &pos) : Item_int_func(pos) {}

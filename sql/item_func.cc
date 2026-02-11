@@ -157,6 +157,8 @@
 #include "template_utils.h"  // pointer_cast
 #include "thr_mutex.h"
 #include "vector-common/vector_constants.h"  // get_dimensions
+#include "sql/table.h"
+#include "sql/sql_lex.h"
 
 using std::max;
 using std::min;
@@ -1546,10 +1548,29 @@ longlong Item_func_connection_id::val_int() {
 
 longlong Item_func_xmin::val_int() {
   THD *thd = current_thd;
-  // Если потока нет или данных еще нет, возвращаем 0
-  if (thd == nullptr) return 0;
-  
-  return (longlong) thd->last_row_trx_id;
+  if (!thd || !thd->lex) return 0;
+
+  Query_block *query_block = thd->lex->current_query_block();
+  if (!query_block || query_block->leaf_tables == nullptr) return 0;
+
+  TABLE *table = query_block->leaf_tables->table;
+  // В 9.6.0 record[0] - это текущий буфер. Проверяем и таблицу.
+  if (!table || !table->record[0]) return 0;
+
+  // Если это не InnoDB, мы просто не найдем там данных.
+  // reclength - это размер всех полей. Наш TRX_ID идет сразу ЗА ними.
+  size_t offset = table->s->reclength;
+  uchar *ptr = table->record[0] + offset;
+
+  // Собираем 6 байт (Big Endian)
+  // Используем массив, чтобы избежать проблем с приведением типов указателей
+  longlong res = ((longlong)ptr[0] << 40) |
+                 ((longlong)ptr[1] << 32) |
+                 ((longlong)ptr[2] << 24) |
+                 ((longlong)ptr[3] << 16) |
+                 ((longlong)ptr[4] << 8)  |
+                 ((longlong)ptr[5]);
+  return res;
 }
 
 void Item_func_xmin::print(const THD *thd, String *str,

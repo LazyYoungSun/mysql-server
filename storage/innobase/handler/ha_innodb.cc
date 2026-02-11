@@ -178,6 +178,10 @@ this program; if not, write to the Free Software Foundation, Inc.,
 #include "srv0start.h"
 #include "string_with_len.h"
 #include "sync0sync.h"
+//#include "row0row.h"
+//#include "rem0rec.h"
+//#include "mach0data.h"
+//#include "row0row.h" 
 #ifdef UNIV_DEBUG
 #include "trx0purge.h"
 #endif /* UNIV_DEBUG */
@@ -8950,6 +8954,26 @@ void ha_innobase::build_template(bool whole_row) {
       templ->rec_field_no = templ->clust_rec_field_no;
     }
   }
+
+  if (m_prebuilt->n_template > 0 && index->is_clustered() && 
+      !m_prebuilt->table->is_system_table && 
+      m_prebuilt->select_lock_type == LOCK_NONE) { // LOCK_NONE значит обычный SELECT
+      
+      mysql_row_templ_t* x_templ = m_prebuilt->mysql_template + m_prebuilt->n_template++;
+      
+      x_templ->col_no = ULINT_UNDEFINED;
+      x_templ->is_virtual = false;
+      x_templ->clust_rec_field_no = index->n_uniq; 
+      x_templ->rec_field_no = x_templ->clust_rec_field_no;
+      
+      x_templ->mysql_col_offset = m_prebuilt->mysql_prefix_len;
+      x_templ->mysql_col_len = 6;
+      x_templ->type = DATA_SYS; 
+      x_templ->mysql_type = DATA_FIXBINARY;
+      
+      m_prebuilt->mysql_prefix_len += 6;
+  }
+
 }
 
 /** This special handling is really to overcome the limitations of MySQL's
@@ -11129,6 +11153,18 @@ int ha_innobase::rnd_next(uchar *buf) /*!< in/out: returns the row in this
   } else {
     error = general_fetch(buf, ROW_SEL_NEXT, 0);
   }
+
+  /*
+  if (error == 0 && m_prebuilt != nullptr && m_prebuilt->trx != nullptr) {
+      // Прямой доступ к текущему потоку через системный макрос
+      THD *thd = current_thd; 
+      if (thd != nullptr) {
+          // Берем ID текущей активной транзакции движка
+          // В InnoDB это trx->id
+          thd->last_row_trx_id = (ulonglong)m_prebuilt->trx->id;
+      }
+  }
+  */
 
   return error;
 }

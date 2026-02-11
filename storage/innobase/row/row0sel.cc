@@ -3058,6 +3058,7 @@ bool row_sel_store_mysql_rec(byte *mysql_rec, row_prebuilt_t *prebuilt,
     }
   }
 
+  /*
   if (rec_index != nullptr && rec_index->is_clustered()) {
     // Извлекаем системный TRX_ID из текущей записи
     const trx_id_t row_trx_id = row_get_rec_trx_id(rec, rec_index, offsets);
@@ -3068,7 +3069,7 @@ bool row_sel_store_mysql_rec(byte *mysql_rec, row_prebuilt_t *prebuilt,
         thd->last_row_trx_id = static_cast<ulonglong>(row_trx_id);
     }
   }
-
+  */
   return true;
 }
 
